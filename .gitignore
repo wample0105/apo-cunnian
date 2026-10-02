@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Secrets & local config
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+build/
+
+# OS / editor noise
+Thumbs.db
+Desktop.ini
+.DS_Store
