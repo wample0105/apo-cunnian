@@ -133,3 +133,22 @@
 **dshmarket「异常」标签实证**：插件页红标与 CLI 兼容警告互相印证（peer 要 dsh-settings ^0.1.x，宿主 0.2.0-rc.2 拒载）。既有问题、与存念无关；豁免（`dsh plugin allow-version dshmarket@1.47.0` 或插件页入口）与否留用户定。
 
 **当前状态**：工单 #2 全部验收通过（功能+可见性），**#2 可关票**；本地四个提交待用户同意推送（b9398ac / f519f6b / e01d4d4 / 本段）。下一票前沿：#3 手动抓取（赠金链 #2→#3→#4/#14 赶 10/6）。
+
+---
+
+## 2026-10-03 重裁定：做桌面端存念专区（推翻「不做管理界面」）→ spec 修订 + 新票 #19
+
+**用户质疑链**：①「UI 上没看出存念菜单」→ 澄清对话驱动设计+插件页条目在；②「整套设计就没在 UI/左侧菜单体现吗」→ 直答「按定版设计没有」并给出四选项；③**用户裁定：重裁定，做桌面菜单**。
+
+**技术侦察结论（实证）**：
+- 左侧主导航（插件/自动化任务那列）是**宿主保留区，无第三方菜单项槽位**——字面意义的左侧菜单做不了。已枚举客户端全部槽位（`packages/client/*/src/client/contract/slots.ts`）：可用的有 `settings.section`（设置页标签页）、`settings.plugins.tab`、`settings.general.item`、`conversation.input.dock`（输入框上方）、`sidebar.footer.action`（侧栏底部按钮）、`shell.overlay`、`rightbar.session` 等。
+- 旧存念（apo-second-brain）当年就是「设置页存念标签页+输入框预置词排+首用引导卡」三件套：客户端 React+esbuild→CJS→`window.__ModuleLoader__.load` 包装成 lib/client.js，`dsh.client` 声明随包分发；数据走 `connection.rpc.call('/api', 'cunnian/status', ...)` 回宿主（宿主 registerStatusRpc 校验 method）。两关键槽位在 0.2.0-rc.2 源码实证存续（ui-agent-preset 用 settings.section；ui-conversation 契约含 conversation.input.dock）。
+- **「桌面菜单」落地形态=设置页「存念」标签页+输入框预置词排**（用户印象里的旧 UI 就是这个标签页）。
+
+**已执行**：
+- spec #1 修订：新增用户故事 37（桌面专区入口）；实现决策加「桌面端存念专区（2026-10-03 重裁定）」段；Out of Scope 「自建 HTML 管理界面」精确化为「通用知识库管理界面（全功能 Web UI）不做，轻量桌面专区除外」。
+- **新票 #19**（ready-for-agent）：设置页存念标签页（库状态总览+改库根）+输入框预置词排+宿主只读 RPC 通道+客户端 bundle 随包分发；六条 AC；无硬阻塞（建议 #3 后开工让面板有数据）。
+- #17（打包发布）原生依赖边 +文本清单均新增 blocked_by #19——发布门槛纳入桌面专区（与 #18 手机体验并列）。依赖端点备忘：`gh api --method POST repos/<owner>/<repo>/issues/<n>/dependencies/blocked_by -F issue_id=<整数id>`（要 REST 整数 id，不是 I_kwDO node id；blocking 变体 404）。
+- 定影：114319-window-y8t3（重裁定执行过程）。
+
+**当前状态**：工单 #2 验收全闭环（关票待用户点头）；本地提交待推送增至四个（b9398ac / f519f6b / e01d4d4 / 6bf8d1b）+本段待提交；前沿三选：#3 手动抓取（赶赠金链）、#19 桌面专区（今天重裁定的热票）、#6 Clean Slate。
