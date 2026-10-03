@@ -109,3 +109,17 @@
 - **dshmarket 既有不兼容（非本次引入）**：`dshmarket@1.47.0` 的 peer 要 `@deepseek-ai/dsh-settings ^0.1.x`，对 0.2.0-rc.2 不满足且无豁免记录（profile 无 compatibility.json）——CLI 警告「stays installed but profile startup denies it」。与存念无关，属用户升级宿主后的既有状态；要不要 `dsh plugin allow-version` 豁免由用户定。
 
 **当前状态**：AC1 的机器侧验证全部完成；**差最后一步=用户重开桌面版**，看插件管理页 cunnian 0.1.0 启用无报错+对话里调一次健康检查（用户操作后补定影截图入底账）。推送远程仍待同意。
+
+---
+
+## 2026-10-03 收口：工单 #2 五条 AC 全部闭环（桌面版实装验收通过）
+
+**用户实测**：重开桌面版→新会话（工作区 `D:\wample\coding\me\test`）说「做个健康检查」。模型对这句做了广义解读，**并行调了两类检查**（它开场明说「存念知识库体检 + 系统/驱动诊断，无论你指哪个都覆盖」）：`cunnian__health` 与 cua-driver 的 `health_report`。用户截图看到的是 AX 误报复核（回复后半段），**存念结果在回复第一节**——表格：库根 `C:\Users\Administrator\cunnian`、已初始化、五桶齐全各 0 条。
+
+**硬证据（比截图更硬）**：会话记录 `~/.dsh/sessions/--D-wample-coding-me-test--/session-3e1d84d5-*/session.v4.jsonl.zstd`（zstd -dc 可解）——request/header 工具表含 `cunnian__health`；`tool/call {"name":"cunnian__health","arguments":"{}"}` 成功；tool/result 返回五桶结构化结果；模型推理原文「There's a cunnian__health tool — 存念知识库健康检查」。
+
+**修正一个错误推断**：desktop profile 的 `dsh.profile.bundles` 列表**不含** `cunnian`（旧插件当年也不含），但插件照常加载、工具照常注册——「bundles 列表决定第三方 bundle 是否激活」对桌面版**不成立**（实证推翻，机制未深究：可能桌面版自动加载全部已装 bundle）。装新插件只动 dependencies 即可生效。
+
+**AC 清账**：AC1 桌面版安装启用 ✓（本轮）｜AC2 健康检查+自动初始化 ✓（headless×2+桌面版×1）｜AC3 frontmatter 读回 ✓（单测）｜AC4 改根重启生效 ✓（headless 实测）｜AC5 单测 ✓（19 用例）。**#2 可关票**（关票动作留用户裁定）。定影底账新增：111237-window-pjdm（桌面版健康检查会话，AX 段；存念段在回复上半屏未入框）。
+
+**模型顺带观察**（正确）：库是空的不是坏了，是「东西还没进来」——下一票 #3 手动抓取就是往里进东西的。当前两个本地提交待推送：`b9398ac`（实现）+ `f519f6b`（handoff 补记一）+ 本段提交。
