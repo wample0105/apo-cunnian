@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>提炼工作台原型——AI 划重点的规则，你来试试顺不顺手</title>
+<style>
+  :root { --accent: #c0392b; --ink: #2c3e50; --muted: #7f8c8d; --bg: #faf9f7; --card: #ffffff; --ok: #27ae60; --warn: #e67e22; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; padding: 32px 24px; max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  h2 { font-size: 15px; margin: 26px 0 10px; color: var(--muted); font-weight: 600; letter-spacing: .05em; }
+  .intro { background: #fdf3f2; border-left: 4px solid var(--accent); padding: 12px 16px; border-radius: 4px; font-size: 14px; margin: 14px 0 4px; }
+  .badge-throwaway { display: inline-block; background: var(--accent); color: #fff; font-size: 12px; padding: 1px 8px; border-radius: 10px; vertical-align: middle; margin-left: 8px; }
+  .card { background: var(--card); border: 1px solid #e8e4de; border-radius: 8px; padding: 16px 20px; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .field { font-size: 14px; margin: 4px 0; }
+  .field b { color: var(--muted); font-weight: normal; margin-right: 6px; }
+  .num { font-variant-numeric: tabular-nums; font-weight: 600; }
+  button { font: inherit; font-size: 14px; padding: 7px 14px; margin: 4px 6px 4px 0; border: 1px solid var(--ink); background: #fff; color: var(--ink); border-radius: 6px; cursor: pointer; }
+  button:hover { background: var(--ink); color: #fff; }
+  button.accent { border-color: var(--accent); color: var(--accent); }
+  button.accent:hover { background: var(--accent); color: #fff; }
+  button:disabled { opacity: .35; cursor: not-allowed; }
+  button:disabled:hover { background: #fff; color: var(--ink); }
+  button.step { width: 100%; text-align: left; margin: 6px 0; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .tab { padding: 6px 14px; border: 1px solid #d5cfc7; border-radius: 20px; cursor: pointer; font-size: 13px; background: #fff; }
+  .tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .scenario-desc { font-size: 14px; color: var(--muted); margin-bottom: 8px; }
+  .entry-text { font-size: 15px; }
+  .entry-text .s { padding: 1px 2px; border-radius: 3px; }
+  .entry-text .l2 { font-weight: 700; background: #fdeee9; }
+  .entry-text .l3 { background: #fdeaa0; outline: 1px dashed #d4ac0d; }
+  .entry-text .cand { background: #ebf5fb; outline: 1px dashed var(--muted); cursor: pointer; }
+  .l0 { color: var(--muted); font-size: 13px; border: 1px dashed #d5cfc7; border-radius: 6px; padding: 10px 12px; margin-top: 10px; }
+  .l4 { margin-top: 10px; padding: 10px 12px; border-radius: 6px; background: #f4f9f4; font-size: 14px; }
+  .origin { font-size: 12px; padding: 1px 8px; border-radius: 10px; margin-left: 8px; }
+  .origin.ai { background: #eadffd; color: #6c3fc5; }
+  .origin.user { background: #d5f5e3; color: #1e8449; }
+  .msg { margin-top: 10px; font-size: 14px; padding: 8px 12px; border-radius: 6px; display: none; }
+  .msg.err { background: #fdecea; color: var(--accent); }
+  .msg.ok { background: #eafaf1; color: var(--ok); }
+  .msg.warn { background: #fdf2e9; color: var(--warn); }
+  .budget-bar { height: 10px; background: #eee; border-radius: 5px; overflow: hidden; margin-top: 4px; }
+  .budget-fill { height: 100%; background: var(--ok); }
+  .budget-fill.over { background: var(--accent); }
+  .legend { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .legend span { margin-right: 14px; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
+</style>
+</head>
+<body>
+
+<h1>提炼工作台原型<span class="badge-throwaway">一次性原型 · 用完即弃</span></h1>
+<div class="intro">
+  <b>这个页面演示什么：</b>笔记存好以后，AI 帮你「划重点」的规矩是——
+  <br>① 每重看一遍笔记（产品里叫一次「触碰」），最多只能动一小步：先加粗，再标亮，最后写总结；
+  <br>② 每一步选中的内容，字数不能超过上一步的两成（20%）——越选越短，只留精华；
+  <br>③ 原文一个字都不动，什么时候都能翻回去。
+  <br>这几条规矩用起来顺不顺手？该拦的操作拦不拦得住？点按钮试试就知道。
+  <br><b>说明：</b>这是个「规矩合不合理」的演示，不是界面设计稿。真实产品里是在句子中间划重点，这里用「整句加粗/标亮」代替，规矩完全一样；红线默认 20%，正式版可以改。
+</div>
+
+<h2>当前状态（每点一次按钮就刷新）</h2>
+<div class="card">
+  <div class="grid">
+    <div>
+      <div class="field"><b>笔记</b>「让笔记更走心」摘录 · 来源：收件箱</div>
+      <div class="field"><b>重看次数</b><span class="num" id="touches">0</span>　<b>这一遍已经动过</b><span id="applied">无</span></div>
+      <div class="field"><b>进度</b><span id="toplayer">还没加粗（刚入库）</span></div>
+      <div class="field"><b>红线（每步最多 20%）</b>
+        <div class="budget-bar"><div class="budget-fill" id="budget-fill" style="width:0%"></div></div>
+        <span style="font-size:12px;color:var(--muted)" id="budget-note"></span>
+      </div>
+    </div>
+    <div>
+      <div class="field"><b>下一步能做什么</b><span id="legal">重看一遍（一切从重看开始）</span></div>
+      <div class="field"><b>已加粗占比</b><span class="num" id="l2ratio">0%</span>　<b>已标亮占比（相对加粗）</b><span class="num" id="l3ratio">0%</span></div>
+    </div>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+
+<div class="card">
+  <div class="field"><b>笔记正文（第一步「加粗」，点句子可勾选）</b></div>
+  <div class="entry-text" id="entry"></div>
+  <div class="l0"><b>原文</b>（永远不动，随时翻得回来）：灵感的价值不在于收集那一刻，而在于未来某次重访时它刚好答上了你心里的问题。所以捕捉时只存原文不做加工，把提炼留给未来那个带着具体问题的你。</div>
+  <div class="l4" id="l4" style="display:none"></div>
+  <div class="legend">
+    <span><span class="swatch" style="background:#fdeee9"></span>加粗（第一步）</span>
+    <span><span class="swatch" style="background:#fdeaa0"></span>标亮（第二步，只能从加粗句里挑）</span>
+    <span><span class="swatch" style="background:#ebf5fb"></span>候选（点句子可增减）</span>
+  </div>
+</div>
+
+<h2>自由操作（随便按，顺序不限）</h2>
+<div class="card">
+  <button id="b-touch" class="accent">重看一遍（触碰）</button>
+  <button id="b-propose">AI 挑候选</button>
+  <button id="b-confirm">写进笔记（确认）</button>
+  <button id="b-l4ai">AI 写总结</button>
+  <button id="b-l4me">我自己改总结</button>
+  <button id="b-reset">重置演示</button>
+</div>
+
+<h2>跟着场景走（点标签从同一起点开始，结果可复现）</h2>
+<div class="card">
+  <div class="tabs" id="tabs"></div>
+  <div class="scenario-desc" id="scen-desc"></div>
+  <div id="scen-steps"></div>
+</div>
+
+<script>
+/* ===== 纯逻辑模块（可整体搬进真实代码；不含任何 DOM 引用） ===== */
+const DistillModel = (() => {
+  const SENTENCES = [
+    "灵感的价值不在于收集那一刻，",
+    "而在于未来某次重访时它刚好答上了你心里的问题。",
+    "所以捕捉时只存原文不做加工，",
+    "把提炼留给未来那个带着具体问题的你。",
+    "每一次重访都是一次重新选择的机会，",
+    "只给真正用得上的句子加层。"
+  ];
+  const L0 = "灵感的价值不在于收集那一刻，而在于未来某次重访时它刚好答上了你心里的问题。所以捕捉时只存原文不做加工，把提炼留给未来那个带着具体问题的你。每一次重访都是一次重新选择的机会，只给真正用得上的句子加层。";
+  const chars = i => [...SENTENCES[i]].length;
+  const totalChars = () => SENTENCES.reduce((s, _, i) => s + chars(i), 0);
+  const sumChars = idxs => idxs.reduce((s, i) => s + chars(i), 0);
+
+  const initial = () => ({
+    budgetRatio: 0.2,
+    touches: 0,
+    appliedThisTouch: null,      // 2 | 3 | 4 | null：这一遍已推进的层
+    l2: [], l3: [],              // 句子下标集合
+    l4: null,                    // {text, origin:'ai'|'user'}
+    candidate: null,             // {layer, idxs, truncated}
+    sentences: SENTENCES, l0: L0,
+    error: null, note: null
+  });
+
+  function nextLayer(s) {
+    if (s.l2.length === 0) return 2;
+    if (s.l3.length === 0) return 3;
+    if (!s.l4) return 4;
+    return null;
+  }
+
+  // 红线裁剪：按 idxs 顺序保留，总字数不超过上一层两成
+  function clip(s, idxs, base) {
+    const cap = Math.max(1, Math.round(base * s.budgetRatio));
+    const kept = []; let used = 0, truncated = false;
+    for (const i of idxs) {
+      const c = chars(i);
+      if (used + c <= cap) { kept.push(i); used += c; }
+      else { truncated = true; break; }
+    }
+    return { kept, truncated, used };
+  }
+
+  function reduce(state, action) {
+    const s = { ...state, l2: [...state.l2], l3: [...state.l3], error: null, note: null };
+    switch (action.type) {
+      case "TOUCH":
+        s.touches += 1; s.appliedThisTouch = null; s.candidate = null;
+        s.note = "重看了一遍。这一遍「动一步」的额度已刷新。";
+        return s;
+
+      case "PROPOSE": {
+        if (s.appliedThisTouch !== null)
+          return { ...s, error: `这一遍你已经动过一步了（${({2:"加粗",3:"标亮",4:"总结"})[s.appliedThisTouch]}）。规矩：每重看一遍只动一步。想继续，先点「重看一遍」。` };
+        const layer = nextLayer(s);
+        if (layer === null) return { ...s, error: "加粗、标亮、总结都有了，没有下一步了。要再加工，就去写文章（表达环节）。" };
+        if (layer === 2) {
+          // AI 倾向多选，制造超红线场景：候选前 4 句
+          const want = [0,1,2,4];
+          const pct = Math.round(sumChars(want)/totalChars()*100);
+          const { kept, truncated } = clip(s, want, totalChars());
+          s.candidate = { layer: 2, idxs: kept, truncated };
+          s.note = truncated
+            ? `AI 想加粗 ${want.length} 句，太多了（占 ${pct}%，超过 20% 红线），只保留了 ${kept.length} 句。`
+            : "AI 挑好了候选加粗句，点句子可增减。";
+        } else if (layer === 3) {
+          if (s.l2.length === 0) return { ...s, error: "标亮只能从加粗的句子里挑。先加粗，再标亮。" };
+          const want = s.l2.slice(0, 2);
+          const base = sumChars(s.l2);
+          const { kept, truncated } = clip(s, want, base);
+          s.candidate = { layer: 3, idxs: kept, truncated };
+          s.note = truncated
+            ? `候选超过加粗字数的两成，已砍短。`
+            : "AI 挑好了候选标亮句（只能从加粗句里挑）。";
+        } else {
+          s.candidate = { layer: 4, idxs: [], truncated: false };
+          s.note = "AI 准备写一句总结，会标明「AI 写的」，不冒充你的话。";
+        }
+        return s;
+      }
+
+      case "TOGGLE_CAND": {
+        if (!s.candidate || s.candidate.layer === 4) return s;
+        const i = action.idx; const cur = s.candidate.idxs;
+        let next;
+        if (cur.includes(i)) next = cur.filter(x => x !== i);
+        else {
+          if (s.candidate.layer === 3 && !s.l2.includes(i))
+            return { ...s, error: "没加粗的句子不能标亮。先加粗它。" };
+          next = [...cur, i];
+        }
+        s.candidate = { ...s.candidate, idxs: next };
+        return s;
+      }
+
+      case "CONFIRM": {
+        if (!s.candidate) return { ...s, error: "还没有候选。先点「AI 挑候选」。" };
+        if (s.appliedThisTouch !== null)
+          return { ...s, error: "这一遍已经动过一步了。先「重看一遍」，再继续。" };
+        const { layer, idxs } = s.candidate;
+        const name = ({2:"加粗",3:"标亮",4:"总结"})[layer];
+        if (layer === 2) s.l2 = idxs;
+        else if (layer === 3) {
+          if (idxs.some(i => !s.l2.includes(i)))
+            return { ...s, error: "候选里有没加粗的句子，标亮只能出自加粗句。请取消勾选。" };
+          s.l3 = idxs;
+        } else if (layer === 4 && !s.l4) {
+          s.l4 = { text: "AI 写的总结：只给用得上的句子加粗，每重看一遍才动一步，剩下的留给未来带着问题的你。", origin: "ai" };
+        }
+        s.appliedThisTouch = layer; s.candidate = null;
+        s.note = `写进去了（${name}）。这一遍的额度用完了，想继续就再重看一遍。`;
+        return s;
+      }
+
+      case "L4_AI": {
+        if (s.appliedThisTouch !== null)
+          return { ...s, error: "这一遍已经动过一步了。总结也等下一遍吧。" };
+        if (s.l2.length === 0) return { ...s, error: "总结得有内容可总结。先加粗几句。" };
+        if (s.l4) return { ...s, error: "已经有总结了。要改就点「我自己改总结」。" };
+        s.l4 = { text: "AI 写的总结：只给用得上的句子加粗，每重看一遍才动一步，剩下的留给未来带着问题的你。", origin: "ai" };
+        s.appliedThisTouch = 4;
+        s.note = "总结写好了，标着「AI 写的」——它不冒充你的原话。";
+        return s;
+      }
+
+      case "L4_REWRITE": {
+        if (!s.l4) return { ...s, error: "还没有总结可改。" };
+        s.l4 = { text: action.text || "我的话：存原文不动，重看才划重点，一次一步，只留答得上问题的句子。", origin: "user" };
+        s.note = "总结改成你的话了，标签换成了「你的原话」。";
+        return s;
+      }
+
+      case "RESET": return initial();
+      default: return s;
+    }
+  }
+
+  const ratios = s => ({
+    l2: totalChars() ? Math.round(sumChars(s.l2)/totalChars()*100) : 0,
+    l3: sumChars(s.l2) ? Math.round(sumChars(s.l3)/sumChars(s.l2)*100) : 0
+  });
+
+  return { initial, reduce, ratios, nextLayer, sentences: SENTENCES };
+})();
+/* ===== 纯逻辑模块结束 ===== */
+
+/* ===== 页面外壳（只调用模块，不含业务规则） ===== */
+let S = DistillModel.initial();
+
+const $ = id => document.getElementById(id);
+const layerName = { 2: "加粗", 3: "标亮", 4: "总结" };
+
+function render() {
+  $("touches").textContent = S.touches;
+  $("applied").textContent = S.appliedThisTouch ? layerName[S.appliedThisTouch] : "无";
+  const top = S.l2.length === 0 ? "还没加粗（刚入库）"
+    : S.l4 ? "已有总结" : S.l3.length ? "已标亮" : "已加粗";
+  $("toplayer").textContent = top;
+  const r = DistillModel.ratios(S);
+  $("l2ratio").textContent = r.l2 + "%"; $("l3ratio").textContent = r.l3 + "%";
+  const total = DistillModel.sentences.join("").length;
+  const cap = Math.round(total * S.budgetRatio);
+  $("budget-note").textContent = `加粗最多 ${cap} 字（全文共 ${total} 字）`;
+  $("budget-fill").style.width = Math.min(100, r.l2) + "%";
+  $("budget-fill").className = "budget-fill" + (r.l2 > S.budgetRatio*100 ? " over" : "");
+
+  const next = DistillModel.nextLayer(S);
+  const legal = [];
+  if (S.candidate) legal.push("写进笔记（确认当前候选）");
+  else if (S.appliedThisTouch === null && next) legal.push("AI 挑候选（轮到" + layerName[next] + "）→ 写进笔记");
+  legal.unshift("重看一遍");
+  $("legal").textContent = legal.join("　→　");
+
+  // 正文渲染
+  const el = $("entry"); el.innerHTML = "";
+  DistillModel.sentences.forEach((t, i) => {
+    const sp = document.createElement("span");
+    sp.className = "s" + (S.l2.includes(i) ? " l2" : "") + (S.l3.includes(i) ? " l3" : "");
+    if (S.candidate && S.candidate.layer !== 4 && S.candidate.idxs.includes(i)) sp.classList.add("cand");
+    sp.textContent = t;
+    if (S.candidate && S.candidate.layer !== 4) {
+      sp.style.cursor = "pointer";
+      sp.title = "点击增减候选";
+      sp.onclick = () => { S = DistillModel.reduce(S, { type: "TOGGLE_CAND", idx: i }); render(); };
+    }
+    el.appendChild(sp);
+  });
+
+  const l4el = $("l4");
+  if (S.l4) {
+    l4el.style.display = "block";
+    l4el.innerHTML = "<b>置顶总结</b><span class='origin " + S.l4.origin + "'>" + (S.l4.origin === "ai" ? "AI 写的（不是你的原话）" : "你的原话") + "</span><br>" + S.l4.text;
+  } else l4el.style.display = "none";
+
+  const msg = $("msg");
+  if (S.error) { msg.className = "msg err"; msg.style.display = "block"; msg.textContent = "⛔ " + S.error; }
+  else if (S.note) { msg.className = "msg " + (S.note.includes("超") ? "warn" : "ok"); msg.style.display = "block"; msg.textContent = (S.note.includes("超") ? "⚠ " : "✓ ") + S.note; }
+  else msg.style.display = "none";
+
+  $("b-confirm").disabled = !S.candidate;
+  $("b-l4ai").disabled = !!S.l4;
+  $("b-l4me").disabled = !S.l4;
+  renderSteps();
+}
+
+/* 自由操作 */
+$("b-touch").onclick = () => { S = DistillModel.reduce(S, { type: "TOUCH" }); render(); };
+$("b-propose").onclick = () => { S = DistillModel.reduce(S, { type: "PROPOSE" }); render(); };
+$("b-confirm").onclick = () => { S = DistillModel.reduce(S, { type: "CONFIRM" }); render(); };
+$("b-l4ai").onclick = () => { S = DistillModel.reduce(S, { type: "L4_AI" }); render(); };
+$("b-l4me").onclick = () => { S = DistillModel.reduce(S, { type: "L4_REWRITE" }); render(); };
+$("b-reset").onclick = () => { S = DistillModel.reduce(S, { type: "RESET" }); activeScen = -1; render(); };
+
+/* 引导场景 */
+const SCENARIOS = [
+  { name: "① 正常流程", desc: "重看 → AI 挑加粗句 → 写进笔记。注意只有选中的句子会变色，原文始终在下面不动。",
+    steps: [ {label:"1. 重看一遍", a:{type:"TOUCH"}}, {label:"2. AI 挑候选（可能被红线砍短）", a:{type:"PROPOSE"}}, {label:"3. 写进笔记", a:{type:"CONFIRM"}} ] },
+  { name: "② 一次只能动一步", desc: "刚加粗完就想接着标亮？应该被拦住——得再重看一遍。这条规矩防止 AI 一口气把笔记提炼完：提炼要跟着你真实的重看走，不是一次性任务。",
+    steps: [ {label:"1. 重看一遍", a:{type:"TOUCH"}}, {label:"2. AI 挑候选", a:{type:"PROPOSE"}}, {label:"3. 写进笔记（加粗好了）", a:{type:"CONFIRM"}}, {label:"4. 不重看，直接再点「AI 挑候选」→ 应被拦", a:{type:"PROPOSE"}}, {label:"5. 再重看一遍", a:{type:"TOUCH"}}, {label:"6. AI 挑候选（这次放行，轮到标亮）", a:{type:"PROPOSE"}}, {label:"7. 写进笔记", a:{type:"CONFIRM"}} ] },
+  { name: "③ 红线演示", desc: "AI 第一轮就想加粗 4 句，占 69%，远超 20% 红线——看它自动砍到 1 句。你也可以点句子自己增减候选再确认。",
+    steps: [ {label:"1. 重看一遍", a:{type:"TOUCH"}}, {label:"2. AI 挑候选（4 句被砍到 1 句）", a:{type:"PROPOSE"}}, {label:"3. 点第一句，把它移出候选", a:"toggle0"}, {label:"4. 写进笔记（更省）", a:{type:"CONFIRM"}} ] },
+  { name: "④ 总结署名", desc: "AI 写的总结带紫色「AI 写的」标，不冒充你的话；你自己改写后变绿色「你的原话」。",
+    steps: [ {label:"1. 重看一遍", a:{type:"TOUCH"}}, {label:"2. AI 挑候选", a:{type:"PROPOSE"}}, {label:"3. 写进笔记", a:{type:"CONFIRM"}}, {label:"4. 再重看一遍", a:{type:"TOUCH"}}, {label:"5. AI 写总结（紫色标）", a:{type:"L4_AI"}}, {label:"6. 我自己改总结（变绿色标）", a:{type:"L4_REWRITE"}} ] },
+  { name: "⑤ 故意乱按", desc: "什么都不做就点「写进笔记」；刚动过一步又想再动——两种都应该被拦住，提示要说人话。（另外：标亮没加粗的句子也会被拦，去自由操作里试试。）",
+    steps: [ {label:"1. 一上来就点「写进笔记」→ 应被拦", a:{type:"CONFIRM"}}, {label:"2. 重看一遍", a:{type:"TOUCH"}}, {label:"3. AI 挑候选", a:{type:"PROPOSE"}}, {label:"4. 写进笔记", a:{type:"CONFIRM"}}, {label:"5. 不重看，再点「AI 挑候选」→ 应被拦", a:{type:"PROPOSE"}} ] }
+];
+let activeScen = -1, stepIdx = 0, scenState = null;
+
+function renderTabs() {
+  const t = $("tabs"); t.innerHTML = "";
+  SCENARIOS.forEach((sc, i) => {
+    const d = document.createElement("div");
+    d.className = "tab" + (i === activeScen ? " active" : "");
+    d.textContent = sc.name;
+    d.onclick = () => { activeScen = i; stepIdx = 0; S = DistillModel.initial(); render(); };
+    t.appendChild(d);
+  });
+}
+function renderSteps() {
+  renderTabs();
+  const box = $("scen-steps"); box.innerHTML = "";
+  if (activeScen < 0) { $("scen-desc").textContent = "点一个场景标签开始——每次都会从同一起点开始，结果可复现。"; return; }
+  const sc = SCENARIOS[activeScen];
+  $("scen-desc").textContent = sc.desc;
+  sc.steps.forEach((st, i) => {
+    const b = document.createElement("button");
+    b.className = "step" + (i === stepIdx ? " accent" : "");
+    b.textContent = st.label + (i < stepIdx ? "　✓" : "");
+    b.disabled = i !== stepIdx;
+    b.onclick = () => {
+      if (st.a === "toggle0") S = DistillModel.reduce(S, { type: "TOGGLE_CAND", idx: S.candidate.idxs[0] });
+      else S = DistillModel.reduce(S, st.a);
+      stepIdx++;
+      render();
+    };
+    box.appendChild(b);
+  });
+  if (stepIdx >= sc.steps.length) {
+    const p = document.createElement("div");
+    p.className = "scenario-desc"; p.style.marginTop = "8px";
+    p.textContent = "场景走完。回到顶部看状态面板，或换别的场景 / 自由操作。";
+    box.appendChild(p);
+  }
+}
+render();
+
+/* 演示态 hook：?demo=guard 展示「一次只能动一步」被拦；?demo=budget 展示红线砍短；?demo=l4 展示总结署名 */
+(function () {
+  const q = new URLSearchParams(location.search).get("demo");
+  if (!q) return;
+  const seq = {
+    guard: ["TOUCH", "PROPOSE", "CONFIRM", "PROPOSE"],
+    budget: ["TOUCH", "PROPOSE"],
+    l4: ["TOUCH", "PROPOSE", "CONFIRM", "TOUCH", "L4_AI"]
+  }[q] || [];
+  seq.forEach(t => { S = DistillModel.reduce(S, { type: t }); });
+  render();
+})();
+</script>
+</body>
+</html>
