@@ -152,3 +152,22 @@
 - 定影：114319-window-y8t3（重裁定执行过程）。
 
 **当前状态**：工单 #2 验收全闭环（关票待用户点头）；本地提交待推送增至四个（b9398ac / f519f6b / e01d4d4 / 6bf8d1b）+本段待提交；前沿三选：#3 手动抓取（赶赠金链）、#19 桌面专区（今天重裁定的热票）、#6 Clean Slate。
+
+---
+
+## 2026-10-03 二次修正：左侧菜单项可做（用户指正正确）——#19 升级为左侧菜单+主区页形态
+
+**用户指正**：「和插件栏平级可以将插件做进左侧菜单，自动化任务就是一个插件，开启后就进了左侧菜单」——**用户对，我此前「左侧主导航是宿主保留区、无第三方菜单项槽位」的判断错误**。
+
+**源码核实（packages/client/ui-schedule/src/client/index.ts）**：「自动化任务」= ui-schedule bundle（可选 bundle 三行之一，结构同第三方插件）经两槽位实现：
+- `ctx.slots.inject('sidebar.panellist', { id: PANEL_ID, order: 10, locale, label })` + TaskManagerIcon 组件 → **左侧菜单项**（图标+文字）；
+- `ctx.slots.inject('main', { key: PANEL_ID })` + TaskManagerPage 组件 → **点击打开的主区页面**；
+- 数据走 `ctx.remote.schedule`（Remote namespace，typert-protocol），另有 sidebar.right.* 详情 tab、turnTail 任务卡、shell.overlay 提示。
+我此前只 grep 了 5 个 contract/slots.ts 就下了「无槽位」结论，漏了 panellist/main 这类在别处声明的槽位——教训：**槽位清单要以实际 bundle 的注册调用为准，不能只看契约文件**。
+
+**已修正**：
+- spec #1：实现决策中「左侧主导航为宿主保留区」改为「左侧菜单项可插（sidebar.panellist+main，自动化任务即先例）」。
+- **票 #19 重写+改题**：「桌面端存念专区——左侧菜单项+主区库状态页（含设置页标签页与输入框预置词）」——八条 AC，首条=左侧菜单出现「存念」项（与插件/自动化任务平级）点击打开主区页；数据通道优先 Remote namespace（ctx.remote.* 形态），备选 connection.rpc（0.2.0 可用性实现时验证）。机制范本已写进票面。
+- 记忆已同步修正。
+
+**当前状态**：#19 就绪可开工（无硬阻塞，建议 #3 后）；本地 6 个提交待用户同意推送（b9398ac / f519f6b / e01d4d4 / 6bf8d1b / c0229b3 / 本段）；#2 关票待用户点头。
