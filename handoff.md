@@ -96,3 +96,16 @@
 **定影底账（`Pictures\Onceglance\2026-10-03\`，标注留待组稿统一执行）**：095236-window-k9z6（TDD 红灯）、095611-window-j74n（绿灯+构建）、100035-window-dz4p（headless 端到端成功）、100232-window-zhua（AC4 改根生效）、100953-window-g7ws（审查修复后复验）。弃片：093948-window-vk9v（误拍任务栏）。
 
 **当前状态与未完成事项**：工单 #2 代码完成（19 测试全绿/typecheck 干净/build 通过/端到端两轮实测），**待用户验收**；本地已提交，**推送远程待用户同意**。遗留两件待用户裁定：①desktop profile 正式安装（需完全退出桌面版；且会把旧插件功能替换下线，建议用户自备时机）；②AC3（frontmatter 读回）与 AC5（单测）已由测试覆盖，AC1 的「桌面版」字面验收差 desktop profile 一步（headless 用的是同一 0.2.0-rc.2 运行时与安装机制）。**下一票前沿**：#3 手动抓取 / #6 Clean Slate / #14 Master Prompt 并行可挑；#15 赠金 **10/6 截止**，优先穿 #2→#3→#4/#14 链。
+
+---
+
+## 2026-10-03 补充：desktop profile 实装完成（UI 验收待用户重开桌面版）
+
+**用户动作**：退出桌面版（进程确认清空）→ 授权补上 AC1 的 desktop profile 安装。
+
+**执行记录**：用桌面版自带 CLI（0.2.0-rc.2）`dsh plugin --profile desktop add D:/wample/coding/me/apo-cunnian/plugin`：
+- **坑**：首次执行 pnpm 子进程静默挂起 12+ 分钟（pnpm.log 空、无网络连接、package.json 与 node_modules 链接其实已写完）——杀掉进程树后重跑 928ms 完成（`Packages: -12` 清掉旧插件残留依赖），run.json 正常收尾。结论：desktop profile 首次对账可能挂起，重跑即过；判定「真卡死」的依据=package.json/junction 已更新而 pnpm.log 长时间为空。
+- 终态核验：`desktop/package.json` 的 `cunnian` → `link:D:/wample/coding/me/apo-cunnian/plugin` ✓；junction 可加载（name/apply/Config 导出齐全）✓；兼容门禁存念零警告 ✓。
+- **dshmarket 既有不兼容（非本次引入）**：`dshmarket@1.47.0` 的 peer 要 `@deepseek-ai/dsh-settings ^0.1.x`，对 0.2.0-rc.2 不满足且无豁免记录（profile 无 compatibility.json）——CLI 警告「stays installed but profile startup denies it」。与存念无关，属用户升级宿主后的既有状态；要不要 `dsh plugin allow-version` 豁免由用户定。
+
+**当前状态**：AC1 的机器侧验证全部完成；**差最后一步=用户重开桌面版**，看插件管理页 cunnian 0.1.0 启用无报错+对话里调一次健康检查（用户操作后补定影截图入底账）。推送远程仍待同意。
