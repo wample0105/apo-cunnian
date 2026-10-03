@@ -1,0 +1,5 @@
+# 存念（cunnian）· 组合清单
+# 作为单插件包插入宿主组合树；全部能力都在本包内，不按环节拆包。
+- insert:
+    - id: cunnian
+      name: cunnian

@@ -56,3 +56,43 @@
 - 依赖图现状：18 张票（#2-#18），25 条阻塞边。
 
 **当前状态与未完成事项**：①原型已验收收口（结论在 #8、原型在一次性分支）；②handoff.md 本段已随收口提交（见最新 commit）；③第 3 幕开工指引不变（#2 骨架票先行，#15 赠金 10/6 截止约束，#18 手机查看体验已入发布门槛）。**第 1-2 幕+补演示+范围追加全部闭环，随时可开第 3 幕。**
+
+---
+
+## ▶ 第 3 幕开工指令（2026-10-03 定稿，新会话粘贴用）
+
+**用户已裁定**：第 3 幕从 #2 开工，**新开会话执行**（守住 ask-matt Context hygiene，教程「逐票新会话」卖点真实演出）。本会话（第 1-2 幕）就此收束。
+
+**新会话开工指令（用户粘贴）**：
+> 继续存念开发，进入第 3 幕：先读 `D:\wample\coding\me\apo-cunnian\handoff.md`（重点最后两段接手指引）+ `docs/research/cordis-plugin-api.md`，然后跑 `/implement` 实现工单 #2（插件骨架与知识库初始化）。全程按 onceglance-tutorial 技能留痕，关键节点定影截图。
+
+**新会话要点提醒**：①开工第一写=claim（`gh issue edit 2 --add-assignee @me`）；②唯一测试缝=工具契约+文件系统效果（vitest，AI 环节用确定性替身）；③ADR-0002/0004 是方法论硬约束不得「顺手优化」掉；④#2 完成后前沿=#3 手动抓取 + #6 Clean Slate + #14 Master Prompt 三张并行可挑；⑤#15（飞书/wizard）要赶 DeepSeek 赠金 **10/6 截止**，其前置链=#2→#3→#4/#14，实现顺序建议优先穿这条链；⑥本段为本地更新未提交，随第 3 幕首批产物一起提交即可（或用户同意即提交）。
+
+---
+
+## 2026-10-03 第 3 幕·工单 #2（完成待验收）：插件骨架与知识库初始化
+
+**用户需求**：新会话跑 `/implement` 实现工单 #2；onceglance-tutorial 全程留痕、关键节点定影。开工即 claim（#2 assignee=@me）。
+
+**交付物（`plugin/`，cunnian 0.1.0，TS+tsdown+vitest 对齐宿主栈）**：
+- bundle 三件套：`package.json`（`dsh.bundle.patch`，peerDependencies 锁 `@deepseek-ai/dsh-tools ~0.2.0-rc.2`，实测过 0.2.0-rc.2 兼容门禁）+ `cordis.patch.yml`（`- id: cunnian, name: cunnian`）+ `lib/index.js`（tsdown 构建产物，gitignore）
+- 知识库核心 `src/library/`：五顶层目录幂等初始化（inbox/projects/areas/resources/archives + 中文名标签）；条目读写（md+YAML frontmatter，契约 id/created/source/touches + title 与未知字段原样保留；正文逐字存取零加工=ADR-0002；`updateEntry` 禁改 id=ADR-0004 收紧）；递归计数（口径取宽只看 .md，损坏判定留给读取路径）
+- 工具 `cunnian__health`：ensureHealth（initLibrary 幂等补桶→collectHealth 只读体检），canonical JSON 返回 + 自然语言 render；库根不存在自动初始化
+- 装配 `apply(ctx, config)`：`inject: ['tools']`，Config=Schemastery（`root` 默认 `~/cunnian`，支持 ~ 展开）
+- 测试 19 用例（临时目录：初始化/条目读写/异常路径/桶补建/装配），TDD 红绿全程留痕
+
+**实现中查明的环境事实（后续票都用得上）**：
+1. **PATH 上 `dsh` 是旧 0.1.5-rc.1**（fnm 全局残留 shim）；桌面版真实 CLI 在 `"C:\Users\Administrator\AppData\Local\Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd"`（0.2.0-rc.2，自带 node24.18.1 + pnpm11.7）。装插件/起 profile 一律用它。
+2. Git Bash 直跑该 dsh.cmd 会被路径空格拆断（报 `'...DeepSeek' 不是内部或外部命令`）；绕法=`ELECTRON_RUN_AS_NODE=1` 直接调 `DeepSeek Harness.exe --expose-internals "...app.asar/dsh/node_modules/@deepseek-ai/dsh-desktop-host/lib/cli.js"`（参数路径用 `C:/` 正斜杠形式，MSYS 才不会误转）。
+3. headless 一次性任务=`dsh --profile <name> "<任务>"`，是插件装载+工具调用的最小验收手段（每次消耗少量 API 赠金）。
+4. **`~/cunnian` 与旧存念 `~/CunNian` 在 Windows 是同一目录**（大小写不敏感）：首次 health 已在该目录并列新增五桶，旧结构（00-Inbox 等 255 文件）原样未动——ADR-0001 旧数据兼容承诺实测成立。
+5. `cunnian-test` profile 的 `cunnian` link 已从旧 repo（apo-second-brain/plugin）换指新 repo `plugin/`（测试 profile，可随时换回）；**desktop profile 未动**（桌面版正在运行，且替换=旧插件功能下线，见待裁定）。
+6. pnpm12 装 vitest 依赖需 `pnpm approve-builds esbuild` 放行构建脚本（交互一次）；旧 `pnpm.onlyBuiltDependencies` 字段 pnpm12 已不读。
+
+**端到端验证（AC1/AC2/AC4，headless 实测两轮）**：安装（兼容门禁过）→ headless 启动 → 模型调用 `cunnian__health` → 库根 `C:\Users\Administrator\cunnian` 自动初始化、五桶齐全如实回报；AC4=用户层 patch 改 `config.root` → 重启 → 新库根生效（验证用临时 patch 已恢复 `[]`，临时目录已清理）。
+
+**code-review 双轴（两并行只读代理）**：规格轴无缺失项；规范轴无硬违规。已采纳修复：初始化统一走幂等 initLibrary（工具侧也补建缺失桶）、删投机 `now` 参数、`updateEntry` 禁改 id、测试助手收敛 tests/helpers.ts、「CODE 全流程」→「信管法则 CODE 全流程」、计数口径注释。未采纳（有据）：`@deepseek-ai/schemastery` 留 dependencies（宿主 dsh-schedule 同款先例）；工具 output.schema 属性内 `required: true` 是宿主 ValueSchemaSpec DSL 既定风格（schedule 源码同款），非标准 JSON Schema 误用。
+
+**定影底账（`Pictures\Onceglance\2026-10-03\`，标注留待组稿统一执行）**：095236-window-k9z6（TDD 红灯）、095611-window-j74n（绿灯+构建）、100035-window-dz4p（headless 端到端成功）、100232-window-zhua（AC4 改根生效）、100953-window-g7ws（审查修复后复验）。弃片：093948-window-vk9v（误拍任务栏）。
+
+**当前状态与未完成事项**：工单 #2 代码完成（19 测试全绿/typecheck 干净/build 通过/端到端两轮实测），**待用户验收**；本地已提交，**推送远程待用户同意**。遗留两件待用户裁定：①desktop profile 正式安装（需完全退出桌面版；且会把旧插件功能替换下线，建议用户自备时机）；②AC3（frontmatter 读回）与 AC5（单测）已由测试覆盖，AC1 的「桌面版」字面验收差 desktop profile 一步（headless 用的是同一 0.2.0-rc.2 运行时与安装机制）。**下一票前沿**：#3 手动抓取 / #6 Clean Slate / #14 Master Prompt 并行可挑；#15 赠金 **10/6 截止**，优先穿 #2→#3→#4/#14 链。

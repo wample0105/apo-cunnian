@@ -9,6 +9,8 @@ node_modules/
 # Build output
 dist/
 build/
+lib/
+*.tsbuildinfo
 
 # OS / editor noise
 Thumbs.db
